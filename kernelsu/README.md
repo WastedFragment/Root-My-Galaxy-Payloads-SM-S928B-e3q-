@@ -18,6 +18,8 @@ between KMIs.
 | `ksud-e3q-S928USQS6DZF2-kdp` | Same exact E3Q build | `android14-6.1` | Device-tested late-load binary embedding the E3Q module |
 | `android14-6.1_kernelsu-e3q-S928BXXS6DZF2-kdp.ko` | `SM-S928B`, `S928BXXS6DZF2` | `android14-6.1` | Exact S928B no-patch-text module with target `vermagic`, audited for manual relocation |
 | `ksud-e3q-S928BXXS6DZF2-kdp` | Same exact S928B build | `android14-6.1` | Late-load binary embedding the S928B no-patch-text module; module-load hardware-tested |
+| `android14-6.1_kernelsu-e3q-S928BXXS4BYG3-kdp.ko` | `SM-S928B`, `S928BXXS4BYG3` | `android14-6.1` | Exact BYG3-release no-patch-text module; statically audited against the recovered BYG3 kernel ELF |
+| `ksud-e3q-S928BXXS4BYG3-kdp` | Same exact BYG3 build | `android14-6.1` | Late-load binary embedding the BYG3 module; hardware load remains untested |
 | `android14-6.1_kernelsu-e2s-S926BXXUEDZDR-kdp.ko` | `SM-S926B`, `S926BXXUEDZDR` | `android14-6.1` | Exact E2S no-patch-text module with target `vermagic`, audited for manual relocation |
 | `ksud-e2s-S926BXXUEDZDR-kdp` | Same exact E2S build | `android14-6.1` | Device-tested late-load binary embedding the E2S no-patch-text module |
 | `android14-6.1_kernelsu-e1s-S921NKSSFDZF3-kdp.ko` | `SM-S921N`, `S921NKSSFDZF3` | `android14-6.1` | Exact S921N no-patch-text module with target `vermagic`, audited for manual relocation |
